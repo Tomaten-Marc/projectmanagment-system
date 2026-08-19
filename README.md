@@ -38,13 +38,9 @@ On PowerShell use `Copy-Item .env.example .env.local`. Open `http://localhost:30
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-
-APP_LOGIN_USERNAME=dqb1fe
-APP_LOGIN_EMAIL=dqb1fe@project.local
 ```
 
 - Find URL and publishable key in **Supabase > Project Settings > API**.
-- `APP_LOGIN_USERNAME` and `APP_LOGIN_EMAIL` are server-only mappings. The internal email is never rendered.
 - The login password must never be placed in an environment variable, file, source code, log, or GitHub setting.
 - Never add `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_SECRET_KEY`. They are not needed.
 
@@ -56,9 +52,9 @@ APP_LOGIN_EMAIL=dqb1fe@project.local
 2. Open **SQL Editor** and run `supabase/migrations/0001_initial_schema.sql`.
 3. Run `supabase/seed.sql` once.
 4. Open **Authentication > Providers > Email**. Keep email/password enabled; disable public user signup in **Authentication > Settings**.
-5. In **Authentication > Users**, choose **Add user > Create new user**.
-6. Enter the internal email from `APP_LOGIN_EMAIL`, enter the requested password directly in Supabase, and mark the email confirmed.
-7. Ensure anonymous sign-ins are disabled. Do not create a signup page.
+5. In **Authentication > Users**, choose **Add user > Send invitation** and enter the user's real email address. Repeat for every authorized user.
+6. Each invited user opens the confirmation link and sets their own password. For a manually created user, mark the email confirmed and provide the initial password through a secure channel.
+7. Disable public signup and anonymous sign-ins. The application intentionally has no signup page.
 8. Put the URL and publishable key in `.env.local`, then start the app.
 
 The requested password is stored and hashed only by Supabase Auth. It is intentionally absent from this repository and its configuration.
@@ -80,7 +76,7 @@ The seed is initialization only. It records supplied facts and marks unknown poi
 
 ## Authentication
 
-The login form accepts a username and password. The Server Action compares the username with `APP_LOGIN_USERNAME`, maps it to `APP_LOGIN_EMAIL`, and submits the password directly to Supabase Auth. The password is not retained. Any invalid username, password, configuration, or provider response produces only `Invalid username or password.`
+The login form accepts the email and password of any authorized Supabase Auth user. The Server Action validates the email and submits both fields directly to Supabase Auth. Credentials are not retained by the application. Any invalid email, password, configuration, or provider response produces only `Invalid email or password.` User accounts are created or invited in **Supabase > Authentication > Users**; adding a user does not require environment-variable changes or a deployment.
 
 `src/proxy.ts` performs an early route check and refreshes cookies. This is not the authorization boundary: the protected layout and all Server Actions call `auth.getUser()` so Supabase verifies the user server-side. Logout invalidates the local Supabase session and redirects to `/login`.
 
@@ -90,7 +86,7 @@ The login form accepts a username and password. The Server Action compares the u
 - Every project table has RLS enabled. `anon` has no table privileges and no policies.
 - Authenticated users receive explicit select, insert, update, and delete policies.
 - Server Actions re-check authentication and validate all accepted fields using Zod.
-- The browser receives no service-role key, internal auth email, password, or static project dataset.
+- The browser receives no service-role key, password, or static project dataset.
 - A per-request nonce CSP permits same-origin code and the configured Supabase connection; `frame-ancestors 'none'` prevents framing.
 - Responses include `nosniff`, `no-referrer`, a restrictive Permissions Policy, `X-Robots-Tag`, and production HSTS.
 - `robots.txt` disallows all crawling and metadata sets `noindex, nofollow`.
@@ -98,13 +94,13 @@ The login form accepts a username and password. The Server Action compares the u
 - UI errors are generic. Detailed Supabase/Auth failures are not returned to clients.
 - Delete requires confirmation. Activity records are never automatically removed.
 
-RLS is the final database boundary, including for direct Supabase clients. The current policies deliberately permit the single authenticated user to manage all project records. Introduce roles or project membership before adding more users.
+RLS is the final database boundary, including for direct Supabase clients. The current policies deliberately permit every authenticated user to manage all project records. Introduce roles or project membership before inviting users who should have restricted access.
 
 ## Vercel Deployment
 
 1. Push this repository to GitHub without `.env.local`.
 2. In Vercel choose **Add New > Project**, import the repository, and keep the detected Next.js settings.
-3. Add the four variables from `.env.example` for Production and Preview. Never add the password or a Supabase secret/service-role key.
+3. Add the two variables from `.env.example` for Production and Preview. Never add a password or a Supabase secret/service-role key.
 4. Deploy. Vercel uses `npm run build`.
 5. In **Supabase > Authentication > URL Configuration**, set **Site URL** to the production Vercel HTTPS URL. Add required preview URLs only when previews need authentication.
 6. Verify `/login`, login, logout, a create/edit/delete cycle, and security response headers.
@@ -150,7 +146,7 @@ Tests cover successful and failed login, logout, unauthenticated redirects, auth
 Verify `.env.local`, restart `npm run dev`, and match names in `.env.example`.
 
 **Every login fails.**  
-Confirm the Supabase user uses the exact internal email, is confirmed, email/password auth is enabled, and both server-only mapping variables match. The UI intentionally gives no more specific error.
+Confirm the Supabase user uses the entered email, is confirmed, and email/password auth is enabled. The UI intentionally gives no more specific error.
 
 **Redirect loop between `/login` and `/`.**  
 Clear site cookies, verify URL/key belong to the same project, and check the production Site URL.

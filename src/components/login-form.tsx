@@ -11,8 +11,8 @@ export function LoginForm() {
   return (
     <form action={action} className="login-form">
       <div className="field">
-        <label htmlFor="username">Username</label>
-        <input id="username" name="username" autoComplete="username" required autoFocus />
+        <label htmlFor="email">Email</label>
+        <input id="email" name="email" type="email" autoComplete="email" required autoFocus />
       </div>
       <div className="field">
         <label htmlFor="password">Password</label>

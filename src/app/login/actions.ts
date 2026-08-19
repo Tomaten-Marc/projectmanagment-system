@@ -7,28 +7,26 @@ import { createClient } from "@/lib/supabase/server";
 export type LoginState = { error: string | null };
 
 const credentialsSchema = z.object({
-  username: z.string().trim().min(1).max(100),
+  email: z.string().trim().email().max(254),
   password: z.string().min(1).max(256),
 });
 
 export async function login(_: LoginState, formData: FormData): Promise<LoginState> {
   const parsed = credentialsSchema.safeParse({
-    username: formData.get("username"),
+    email: formData.get("email"),
     password: formData.get("password"),
   });
-  const expectedUsername = process.env.APP_LOGIN_USERNAME;
-  const authEmail = process.env.APP_LOGIN_EMAIL;
 
-  if (!parsed.success || !expectedUsername || !authEmail || parsed.data.username !== expectedUsername) {
-    return { error: "Invalid username or password." };
+  if (!parsed.success) {
+    return { error: "Invalid email or password." };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({
-    email: authEmail,
+    email: parsed.data.email.toLowerCase(),
     password: parsed.data.password,
   });
-  if (error) return { error: "Invalid username or password." };
+  if (error) return { error: "Invalid email or password." };
   redirect("/");
 }
 

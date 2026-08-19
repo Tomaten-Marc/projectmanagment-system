@@ -17,29 +17,27 @@ import { getAuthRedirect } from "@/lib/supabase/proxy";
 
 describe("authentication", () => {
   beforeEach(() => {
-    process.env.APP_LOGIN_USERNAME = "dqb1fe";
-    process.env.APP_LOGIN_EMAIL = "dqb1fe@project.local";
     signInWithPassword.mockResolvedValue({ error: null });
     signOut.mockResolvedValue({ error: null });
   });
 
-  it("translates a successful username login server-side", async () => {
-    const form = new FormData(); form.set("username", "dqb1fe"); form.set("password", "test-password");
+  it("signs in a Supabase user with email and password", async () => {
+    const form = new FormData(); form.set("email", "User@Example.com"); form.set("password", "test-password");
     await login({ error: null }, form);
-    expect(signInWithPassword).toHaveBeenCalledWith({ email: "dqb1fe@project.local", password: "test-password" });
+    expect(signInWithPassword).toHaveBeenCalledWith({ email: "user@example.com", password: "test-password" });
     expect(redirect).toHaveBeenCalledWith("/");
   });
 
-  it("returns the same generic error for a wrong username", async () => {
-    const form = new FormData(); form.set("username", "unknown"); form.set("password", "anything");
-    await expect(login({ error: null }, form)).resolves.toEqual({ error: "Invalid username or password." });
+  it("rejects an invalid email before contacting Supabase", async () => {
+    const form = new FormData(); form.set("email", "not-an-email"); form.set("password", "anything");
+    await expect(login({ error: null }, form)).resolves.toEqual({ error: "Invalid email or password." });
     expect(createClient).not.toHaveBeenCalled();
   });
 
   it("returns the generic error when Supabase rejects the password", async () => {
     signInWithPassword.mockResolvedValueOnce({ error: new Error("provider detail") });
-    const form = new FormData(); form.set("username", "dqb1fe"); form.set("password", "wrong");
-    await expect(login({ error: null }, form)).resolves.toEqual({ error: "Invalid username or password." });
+    const form = new FormData(); form.set("email", "user@example.com"); form.set("password", "wrong");
+    await expect(login({ error: null }, form)).resolves.toEqual({ error: "Invalid email or password." });
   });
 
   it("invalidates the local session on logout", async () => {
