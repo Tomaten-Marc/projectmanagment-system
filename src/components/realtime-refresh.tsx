@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,13 +19,18 @@ const refreshDelayMs = 150;
 
 export function RealtimeRefresh() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   useEffect(() => {
     const supabase = createClient();
     let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     const scheduleRefresh = () => {
       clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => router.refresh(), refreshDelayMs);
+      refreshTimer = setTimeout(() => routerRef.current.refresh(), refreshDelayMs);
+    };
+    const handleChange = (payload: { eventType?: string }) => {
+      if (["INSERT", "UPDATE", "DELETE"].includes(payload.eventType ?? "")) scheduleRefresh();
     };
 
     let channel = supabase.channel("project-data-refresh");
@@ -33,7 +38,7 @@ export function RealtimeRefresh() {
       channel = channel.on(
         "postgres_changes",
         { event: "*", schema: "public", table },
-        scheduleRefresh,
+        handleChange,
       );
     }
     channel.subscribe();
@@ -42,7 +47,7 @@ export function RealtimeRefresh() {
       clearTimeout(refreshTimer);
       void supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, []);
 
   return null;
 }

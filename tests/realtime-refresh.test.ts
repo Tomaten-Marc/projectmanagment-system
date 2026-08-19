@@ -33,14 +33,20 @@ describe("RealtimeRefresh", () => {
     expect(mocks.on).toHaveBeenCalledTimes(8);
     expect(mocks.subscribe).toHaveBeenCalledOnce();
 
-    const onChange = mocks.on.mock.calls[0][2] as () => void;
+    const onChange = mocks.on.mock.calls[0][2] as (payload: { eventType?: string }) => void;
     act(() => {
-      onChange();
-      onChange();
+      onChange({});
+      onChange({ eventType: "UPDATE" });
+      onChange({ eventType: "UPDATE" });
       vi.advanceTimersByTime(150);
     });
 
     expect(mocks.refresh).toHaveBeenCalledOnce();
+
+    view.rerender(createElement(RealtimeRefresh));
+    expect(mocks.on).toHaveBeenCalledTimes(8);
+    expect(mocks.subscribe).toHaveBeenCalledOnce();
+
     view.unmount();
     expect(mocks.removeChannel).toHaveBeenCalledWith(mocks.channel);
   });

@@ -1,25 +1,34 @@
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
-export async function proxy(request: NextRequest) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const isDev = process.env.NODE_ENV === "development";
-  const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
-    ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
-    : "";
-  const csp = [
+export function buildContentSecurityPolicy(nonce: string, isDev: boolean, supabaseUrl?: string) {
+  const connectOrigins: string[] = [];
+  if (supabaseUrl) {
+    const supabaseOrigin = new URL(supabaseUrl).origin;
+    const realtimeOrigin = new URL(supabaseOrigin);
+    realtimeOrigin.protocol = realtimeOrigin.protocol === "https:" ? "wss:" : "ws:";
+    connectOrigins.push(supabaseOrigin, realtimeOrigin.origin);
+  }
+
+  return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    `connect-src 'self' ${supabaseOrigin}`.trim(),
+    `connect-src 'self' ${connectOrigins.join(" ")}`.trim(),
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
     "upgrade-insecure-requests",
   ].join("; ");
+}
+
+export async function proxy(request: NextRequest) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isDev = process.env.NODE_ENV === "development";
+  const csp = buildContentSecurityPolicy(nonce, isDev, process.env.NEXT_PUBLIC_SUPABASE_URL);
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
