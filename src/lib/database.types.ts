@@ -8,6 +8,7 @@ export type WorkPackage = {
 
 export type Task = {
   id: string; work_package_id: string; task_code: string; title: string; description: string | null;
+  implementation_details: string | null;
   status: "open" | "waiting" | "in_progress" | "blocked" | "done";
   priority: "low" | "medium" | "high" | "critical"; blocking: boolean;
   responsible: string | null; dependency: string | null; due_date: string | null;

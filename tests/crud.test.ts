@@ -29,7 +29,7 @@ describe("basic CRUD actions", () => {
     const form = taskForm();
     const result = await saveEntity("tasks", { ok:false, message:"" }, form);
     expect(result).toEqual({ ok:true, message:"Saved." });
-    expect(entity.insert).toHaveBeenCalled();
+    expect(entity.insert).toHaveBeenCalledWith(expect.objectContaining({ implementation_details: "Connect the source and validate the result." }));
     expect(activityInsert).toHaveBeenCalledWith(expect.objectContaining({ event_type:"entity_created", source:"web_app" }));
   });
 
@@ -55,6 +55,6 @@ describe("basic CRUD actions", () => {
 function taskForm() {
   const form = new FormData();
   form.set("work_package_id", "10000000-0000-0000-0000-000000000001"); form.set("task_code", "AP1-T99");
-  form.set("title", "Test task"); form.set("status", "open"); form.set("priority", "medium"); form.set("sort_order", "10");
+  form.set("title", "Test task"); form.set("implementation_details", "Connect the source and validate the result."); form.set("status", "open"); form.set("priority", "medium"); form.set("sort_order", "10");
   return form;
 }

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(resolve("supabase/migrations/0001_initial_schema.sql"), "utf8");
+const realtimeMigration = readFileSync(resolve("supabase/migrations/20260819073248_enable_realtime_and_task_details.sql"), "utf8");
 const tables = ["work_packages","tasks","open_questions","decisions","stakeholders","access_requests","roadmap_items","activity_log"];
 
 describe("database security contract", () => {
@@ -20,5 +21,15 @@ describe("database security contract", () => {
     expect(migration).toContain("for insert to authenticated");
     expect(migration).toContain("for update to authenticated");
     expect(migration).toContain("for delete to authenticated");
+  });
+});
+
+describe("realtime and task detail migration", () => {
+  it("adds a dedicated task implementation field", () => {
+    expect(realtimeMigration).toContain("add column implementation_details text");
+  });
+
+  it.each(tables)("adds %s to the Realtime publication", (table) => {
+    expect(realtimeMigration).toContain(`'${table}'`);
   });
 });
