@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { LoginForm } from "@/components/login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  await connection();
+
   return (
     <main className="login-page">
       <section className="login-panel">

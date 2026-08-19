@@ -23,7 +23,7 @@ The publishable key identifies the Supabase project; it is not a secret. Authori
 
 ## Local Installation
 
-Prerequisites: Node.js 20 or newer, npm, and a free Supabase project.
+Prerequisites: Node.js 24 or newer, npm, and a free Supabase project. The development and production start scripts enable Node's environment-proxy support so Supabase remains reachable on corporate networks that provide `HTTP_PROXY` or `HTTPS_PROXY`.
 
 ```bash
 npm install
@@ -87,7 +87,7 @@ The login form accepts the email and password of any authorized Supabase Auth us
 - Authenticated users receive explicit select, insert, update, and delete policies.
 - Server Actions re-check authentication and validate all accepted fields using Zod.
 - The browser receives no service-role key, password, or static project dataset.
-- A per-request nonce CSP permits same-origin code and the configured Supabase connection; `frame-ancestors 'none'` prevents framing.
+- A per-request nonce CSP permits Next.js scripts and the configured Supabase connection; the login route is dynamically rendered so framework scripts receive the request nonce. Inline styles are allowed because the application uses React style attributes for data-driven progress and roadmap values. `frame-ancestors 'none'` prevents framing.
 - Responses include `nosniff`, `no-referrer`, a restrictive Permissions Policy, `X-Robots-Tag`, and production HSTS.
 - `robots.txt` disallows all crawling and metadata sets `noindex, nofollow`.
 - Browser source maps and the `X-Powered-By` header are disabled.
